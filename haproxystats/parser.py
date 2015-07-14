@@ -1,7 +1,7 @@
-import requests
 import json
 import logging
 from datetime import datetime
+from requests import Request, Session
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -40,12 +40,8 @@ class HaproxyStats(object):
         local_stats = { 'frontends': {}, 'backends':  {} }
         haproxy_url = 'http://' +  base_url + '/;csv;norefresh'
     
-        if None in self._auth:
-            r = requests.get(haproxy_url)
-        else:
-            r = requests.get(haproxy_url, auth=self._auth)
-    
-        csv = r.text.strip(' #').split('\n')
+        csv = self._get(haproxy_url).strip(' #').split('\n')
+
         #read fields header to create keys
         fields = [ self._utf(f) for f in csv.pop(0).split(',') if f ]
         #zip field names and values
@@ -74,6 +70,21 @@ class HaproxyStats(object):
                     bkend['listeners'][name] = stat
     
         return local_stats
+
+    def _get(self,url):
+        s = Session()
+        if None in self._auth:
+            req = Request('GET',url)
+        else:
+            req = Request('GET',url,auth=self._auth)
+
+        try:
+            r = s.send(req.prepare(),timeout=10)
+        except Exception as e:
+            log.warn('Error fetching stats from %s:\n%s' % (url,e))
+            return ''
+
+        return r.text
 
     def _utf(self,u):
         return u.encode('utf8')
