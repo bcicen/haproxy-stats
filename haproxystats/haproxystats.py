@@ -8,7 +8,7 @@ log = logging.getLogger(__name__)
 class HaproxyStats(object):
     """
     params:
-     - servers(list) - List of haproxy instances defined as i
+     - servers(list) - List of haproxy instances defined as
        hostname:port or ip:port
      - user(str) -  User to authenticate with via basic auth(optional)
      - user_pass(str) -  Password to authenticate with via basic auth(optional)
