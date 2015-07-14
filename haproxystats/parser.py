@@ -1,6 +1,7 @@
 import requests
 import json
 import logging
+from datetime import datetime
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -15,8 +16,20 @@ class HaproxyStats(object):
     """
     def __init__(self,servers,user=None,user_pass=None):
         self._auth = (user,user_pass)
+        self.servers = servers
+
+        self.update()
+
+    def update(self):
+        start = datetime.utcnow()
         self.all_stats = { s.split(':')[0] : self._fetch_stats(s) \
-                           for s in servers }
+                           for s in self.servers }
+        duration = (datetime.utcnow() - start).total_seconds()
+        log.info('Fetched stats from %s servers in %s seconds' % \
+                (len(self.servers),duration))
+
+    def to_json(self):
+        return json.dumps(self.all_stats)
 
     def _fetch_stats(self,base_url):
         """
