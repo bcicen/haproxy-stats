@@ -21,11 +21,22 @@ class HaproxyStats(object):
 
     def update(self):
         self.last_update = datetime.utcnow()
+
         self.all_stats = { s.split(':')[0] : self._fetch_stats(s) \
                            for s in self.servers }
+
         duration = (datetime.utcnow() - self.last_update).total_seconds()
-        log.info('Fetched stats from %s servers in %s seconds' % \
+        log.info('Polled stats from %s servers in %s seconds' % \
                 (len(self.servers),duration))
+
+        #check for empty(failed) servers
+        self.failed = [ k for k,v in self.all_stats.iteritems() if \
+                        not v['frontends'] or not v['backends'] ] 
+
+        if self.failed:
+            return False
+
+        return True
 
     def to_json(self):
         return json.dumps(self.all_stats)
