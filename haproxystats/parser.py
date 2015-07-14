@@ -3,7 +3,6 @@ import logging
 from datetime import datetime
 from requests import Request, Session
 
-logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 class HaproxyStats(object):
@@ -21,10 +20,10 @@ class HaproxyStats(object):
         self.update()
 
     def update(self):
-        start = datetime.utcnow()
+        self.last_update = datetime.utcnow()
         self.all_stats = { s.split(':')[0] : self._fetch_stats(s) \
                            for s in self.servers }
-        duration = (datetime.utcnow() - start).total_seconds()
+        duration = (datetime.utcnow() - self.last_update).total_seconds()
         log.info('Fetched stats from %s servers in %s seconds' % \
                 (len(self.servers),duration))
 
