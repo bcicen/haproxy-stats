@@ -8,6 +8,9 @@ log = logging.getLogger(__name__)
 def to_utf(s):
     return s.encode('utf8')
 
+class HAProxyStatsException(Exception):
+    """ Generic HAProxyStats exception """
+
 class HAProxyService(object):
     """
     Generic service object representing a proxy component
@@ -105,7 +108,9 @@ class HAProxyServer(object):
         try:
             r = s.send(req.prepare(),timeout=10)
         except Exception as e:
-            log.warn('Error fetching stats from %s:\n%s' % (url,e))
+            raise HAProxyStatsException(
+                    'Error fetching stats from %s:\n%s' % (url,e)
+                    )
             return ''
 
         return r.text
