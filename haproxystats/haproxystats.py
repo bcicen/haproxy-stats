@@ -81,7 +81,7 @@ class HAProxyServer(object):
             if service.svname == 'FRONTEND':
                 self.frontends.append(service)
             elif service.svname == 'BACKEND':
-                service.listener_names = []
+                service.listeners = []
                 self.backends.append(service)
             else:
                 self.listeners.append(service)
@@ -90,11 +90,10 @@ class HAProxyServer(object):
         for listener in self.listeners:
             for backend in self.backends:
                 if backend.iid == listener.iid:
-                    backend.listener_names.append(listener.name)
+                    backend.listeners.append(listener.__dict__)
 
         self.stats = { 'frontends': [ s.__dict__ for s in self.frontends ],
-                       'backends': [ s.__dict__ for s in self.backends ],
-                       'listeners': [ s.__dict__ for s in self.listeners ] }
+                       'backends': [ s.__dict__ for s in self.backends ] }
 
         self.last_update = datetime.utcnow()
     
