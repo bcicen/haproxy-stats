@@ -5,82 +5,98 @@ from requests import Request, Session
 
 log = logging.getLogger(__name__)
 
-class HaproxyStats(object):
+def to_utf(s):
+    return s.encode('utf8')
+
+class HAProxyService(object):
     """
+    Generic service object representing a proxy component
     params:
-     - servers(list) - List of haproxy instances defined as
-       hostname:port or ip:port
-     - user(str) -  User to authenticate with via basic auth(optional)
-     - user_pass(str) -  Password to authenticate with via basic auth(optional)
+     - fields(list): Fieldnames as read from haproxy stats export header
+     - values(list): Stats for corresponding fields given above for this 
+                     frontend, backend, or listener
     """
-    def __init__(self,servers,user=None,user_pass=None):
-        self._auth = (user,user_pass)
-        self.servers = servers
+    def __init__(self,fields,values,proxy_name=None):
+        self.proxy_name = proxy_name
 
-        self.update()
+        #zip field names and values
+        self.__dict__ = dict(zip(fields, self._read(values)))
 
-    def update(self):
-        self.last_update = datetime.utcnow()
-
-        self.all_stats = { s.split(':')[0] : self._fetch_stats(s) \
-                           for s in self.servers }
-
-        duration = (datetime.utcnow() - self.last_update).total_seconds()
-        log.info('Polled stats from %s servers in %s seconds' % \
-                (len(self.servers),duration))
-
-        #check for empty(failed) servers
-        self.failed = [ k for k,v in self.all_stats.iteritems() if \
-                        not v['frontends'] or not v['backends'] ] 
-
-        if self.failed:
-            return False
-
-        return True
+        if self.svname == 'FRONTEND' or self.svname == 'BACKEND':
+            self.name = self.pxname
+        else:
+            self.name =  self.svname
 
     def to_json(self):
-        return json.dumps(self.all_stats)
+        return json.dumps(self.__dict__)
 
-    def _fetch_stats(self,base_url):
+    def _read(self,values):
         """
-        Fetch and parse stats from a single haproxy instance
+        Read stat str, convert unicode to utf and string to int where needed
+        and return as list
         """
-    
-        listeners = []
-        local_stats = { 'frontends': {}, 'backends':  {} }
-        haproxy_url = 'http://' +  base_url + '/;csv;norefresh'
-    
-        csv = self._get(haproxy_url).strip(' #').split('\n')
+        ret = []
 
+        for v in values:
+            if v.isdigit():
+                v = int(v)
+            if isinstance(v,unicode):
+                v = to_utf(v)
+            ret.append(v)
+    
+        return ret
+
+    def __str__(self):
+        return to_json()
+
+class HAProxyServer(object):
+    """
+    HAProxyServer object is created for each haproxy server we poll along with
+    corresponding frontend, backend, and listener services.
+    """
+    def __init__(self,base_url,auth=None):
+        self._auth = auth
+        self.failed = False
+
+        self.name = base_url.split(':')[0]
+        self.url = 'http://' +  base_url + '/;csv;norefresh'
+
+    def fetch_stats(self):
+        """
+        Fetch and parse stats from this Haproxy instance
+        """
+        self.frontends = []
+        self.backends = []
+        self.listeners = []
+
+        csv = [ l for l in self._get(self.url).strip(' #').split('\n') if l ]
         #read fields header to create keys
-        fields = [ self._utf(f) for f in csv.pop(0).split(',') if f ]
-        #zip field names and values
-        stats = [ dict(zip(fields, self._read_stat(l))) for l in csv if l ]
+        fields = [ to_utf(f) for f in csv.pop(0).split(',') if f ]
     
-        #populate frontends and backends first
-        for stat in stats:
-            name = stat['pxname']
-    
-            if stat['svname'] == 'FRONTEND':
-                local_stats['frontends'][name] = stat
-    
-            elif stat['svname'] == 'BACKEND':
-                stat['listeners'] = {}
-                local_stats['backends'][name] = stat
-    
-            else:
-                listeners.append(stat)
-    
-        #now add servers/listeners to corresponding backends
-        for stat in listeners:
-            name = stat['svname'] #use unique svname here
-            iid = stat['iid']
-            for bkname,bkend in local_stats['backends'].iteritems():
-                if bkend['iid'] == iid:
-                    bkend['listeners'][name] = stat
-    
-        return local_stats
+        #add frontends and backends first
+        for line in csv:
+            service = HAProxyService(fields, line.split(','), proxy_name=self.name)
 
+            if service.svname == 'FRONTEND':
+                self.frontends.append(service)
+            elif service.svname == 'BACKEND':
+                service.listener_names = []
+                self.backends.append(service)
+            else:
+                self.listeners.append(service)
+    
+        #now add listener  names to corresponding backends
+        for listener in self.listeners:
+            for backend in self.backends:
+                if backend.iid == listener.iid:
+                    backend.listener_names.append(listener.name)
+
+        self.stats = { 'frontends': self.frontends,
+                       'backends': self.backends,
+                       'listeners': self.listeners }
+
+        self.last_update = datetime.utcnow()
+    
     def _get(self,url):
         s = Session()
         if None in self._auth:
@@ -92,24 +108,45 @@ class HaproxyStats(object):
             r = s.send(req.prepare(),timeout=10)
         except Exception as e:
             log.warn('Error fetching stats from %s:\n%s' % (url,e))
+            self.failed = True
             return ''
 
         return r.text
 
-    def _utf(self,u):
-        return u.encode('utf8')
+class HaproxyStats(object):
+    """
+    params:
+     - servers(list) - List of haproxy instances defined as
+       hostname:port or ip:port
+     - user(str) -  User to authenticate with via basic auth(optional)
+     - user_pass(str) -  Password to authenticate with via basic auth(optional)
+    """
+    def __init__(self,servers,user=None,user_pass=None):
+        self.servers = [ HAProxyServer(s,auth=(user,user_pass)) for s in servers ]
 
-    def _read_stat(self,stat):
-        """
-        Read stat str, convert unicode to utf and string to int where needed
-        and return as list
-        """
-        ret = []
-        for s in stat.split(','):
-            if s.isdigit():
-                s = int(s)
-            if isinstance(s,unicode):
-                s = self._utf(s)
-            ret.append(s)
-    
-        return ret
+        self.update()
+
+    def update(self):
+        start = datetime.utcnow()
+
+        for s in self.servers:
+            s.fetch_stats()
+
+        duration = (datetime.utcnow() - start).total_seconds()
+        log.info('Polled stats from %s servers in %s seconds' % \
+                (len(self.servers),duration))
+
+        if self.get_failed():
+            return False
+
+        return True
+
+    def all_stats(self):
+        return { s.name : s.stats for s in self.servers }
+
+    def to_json(self):
+        print(self.all_stats())
+        return json.dumps(self.all_stats())
+
+    def get_failed(self):
+        return [ s for s in self.servers if s.failed ]
