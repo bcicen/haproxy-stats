@@ -27,9 +27,6 @@ class HAProxyService(object):
         else:
             self.name =  self.svname
 
-    def to_json(self):
-        return json.dumps(self.__dict__)
-
     def _read(self,values):
         """
         Read stat str, convert unicode to utf and string to int where needed
@@ -45,9 +42,6 @@ class HAProxyService(object):
             ret.append(v)
     
         return ret
-
-    def __str__(self):
-        return to_json()
 
 class HAProxyServer(object):
     """
@@ -70,6 +64,10 @@ class HAProxyServer(object):
         self.listeners = []
 
         csv = [ l for l in self._get(self.url).strip(' #').split('\n') if l ]
+        if not csv:
+            self.failed = True
+            return
+
         #read fields header to create keys
         fields = [ to_utf(f) for f in csv.pop(0).split(',') if f ]
     
@@ -91,9 +89,9 @@ class HAProxyServer(object):
                 if backend.iid == listener.iid:
                     backend.listener_names.append(listener.name)
 
-        self.stats = { 'frontends': self.frontends,
-                       'backends': self.backends,
-                       'listeners': self.listeners }
+        self.stats = { 'frontends': [ s.__dict__ for s in self.frontends ],
+                       'backends': [ s.__dict__ for s in self.backends ],
+                       'listeners': [ s.__dict__ for s in self.listeners ] }
 
         self.last_update = datetime.utcnow()
     
@@ -108,7 +106,6 @@ class HAProxyServer(object):
             r = s.send(req.prepare(),timeout=10)
         except Exception as e:
             log.warn('Error fetching stats from %s:\n%s' % (url,e))
-            self.failed = True
             return ''
 
         return r.text
@@ -145,7 +142,6 @@ class HaproxyStats(object):
         return { s.name : s.stats for s in self.servers }
 
     def to_json(self):
-        print(self.all_stats())
         return json.dumps(self.all_stats())
 
     def get_failed(self):
