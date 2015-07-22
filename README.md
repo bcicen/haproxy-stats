@@ -38,9 +38,10 @@ print(hs.to_json())
         "status": "UP",
         "lastchg": 497805,
         "weight": 0,
-         ...
+         "..."
         "listeners": []
-      },
+      }
+    ],
     "frontends": []
   }
 }
