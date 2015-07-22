@@ -20,8 +20,6 @@ class HAProxyService(object):
                      frontend, backend, or listener
     """
     def __init__(self,fields,values,proxy_name=None):
-        self.proxy_name = proxy_name
-
         #zip field names and values
         self.__dict__ = dict(zip(fields, self._read(values)))
 
@@ -29,6 +27,8 @@ class HAProxyService(object):
             self.name = self.pxname
         else:
             self.name =  self.svname
+
+        self.proxy_name = proxy_name
 
     def _read(self,values):
         """
@@ -142,11 +142,8 @@ class HaproxyStats(object):
 
         return True
 
-    def all_stats(self):
-        return { s.name : s.stats for s in self.servers }
-
     def to_json(self):
-        return json.dumps(self.all_stats())
+        return json.dumps({ s.name : s.stats for s in self.servers })
 
     def get_failed(self):
         return [ s for s in self.servers if s.failed ]
