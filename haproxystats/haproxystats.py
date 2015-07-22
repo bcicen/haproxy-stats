@@ -48,11 +48,11 @@ class HAProxyService(object):
 
 class HAProxyServer(object):
     """
-    HAProxyServer object is created for each haproxy server we poll along with
+    HAProxyServer object is created for each haproxy server polled. Stores
     corresponding frontend, backend, and listener services.
     """
-    def __init__(self,base_url,auth=None):
-        self._auth = auth
+    def __init__(self,base_url,user=None,user_pass=None):
+        self._auth = (user,user_pass)
         self.failed = False
 
         self.name = base_url.split(':')[0]
@@ -123,7 +123,7 @@ class HaproxyStats(object):
      - user_pass(str) -  Password to authenticate with via basic auth(optional)
     """
     def __init__(self,base_urls,user=None,user_pass=None):
-        self.servers = [ HAProxyServer(s,auth=(user,user_pass)) for s in base_urls ]
+        self.servers = [ HAProxyServer(s,user=user,user_pass=user_pass)) for s in base_urls ]
 
         self.update()
 
