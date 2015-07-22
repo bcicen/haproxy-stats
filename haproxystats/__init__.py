@@ -1,7 +1,6 @@
-import logging
-
 __version__ = '0.3'
 
-logging.basicConfig(level=logging.INFO)
-
+import logging
 from .haproxystats import HaproxyStats
+
+logging.basicConfig(level=logging.INFO)

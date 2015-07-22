@@ -1,5 +1,5 @@
 # haproxy-stats
-Haproxy-stats is a small Python library for east fetching and parsing of one or several Haproxy server stat sockets
+Haproxy-stats is a small Python library for fetching and parsing servers stats from HAProxy
 
 # Installing
 ```
@@ -14,36 +14,36 @@ python setup.py install
 from haproxystats import HaproxyStats
 
 servers = [ 'server1:3212', 'server2:3212' ]
-
 hs = HaproxyStats(servers,user='<username>',user_pass='<password>')
 
-hs.to_json()
-...
+for server in hs.servers:
+    for l in server.listeners:
+        print l.status
+```
+```
+UP
+UP
+UP
 ```
 
-# Stat Structure
-
-All frontend,backend, and listener stats read like so:
-```
-{
- "name":
-   "field1":"value1",
-   "field2":"value2"
-}
+```python
+print(hs.to_json())
 ```
 
-Each stat is structured cummulatively according to the server or backend(in the case of listeners) they are a member of:
-```
+```json
 {
   "haproxy_server1": {
-    "backends": {
-      "backend1":
-				...
-        "listeners": {
-          "listener1": {...}
-        }
-		},
-    "frontends": {...}
+    "backends": [
+      {
+        "status": "UP",
+        "lastchg": 497805,
+        "weight": 0,
+         ...
+        "listeners": []
+      },
+    "frontends": []
   }
 }
 ```
+
+full docs available in the docs/ folder
