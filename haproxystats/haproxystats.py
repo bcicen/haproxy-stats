@@ -117,13 +117,13 @@ class HAProxyServer(object):
 class HaproxyStats(object):
     """
     params:
-     - servers(list) - List of haproxy instances defined as
+     - base_urls(list) - List of haproxy instances defined as
        hostname:port or ip:port
      - user(str) -  User to authenticate with via basic auth(optional)
      - user_pass(str) -  Password to authenticate with via basic auth(optional)
     """
-    def __init__(self,servers,user=None,user_pass=None):
-        self.servers = [ HAProxyServer(s,auth=(user,user_pass)) for s in servers ]
+    def __init__(self,base_urls,user=None,user_pass=None):
+        self.servers = [ HAProxyServer(s,auth=(user,user_pass)) for s in base_urls ]
 
         self.update()
 
