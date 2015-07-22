@@ -123,7 +123,7 @@ class HaproxyStats(object):
      - user_pass(str) -  Password to authenticate with via basic auth(optional)
     """
     def __init__(self,base_urls,user=None,user_pass=None):
-        self.servers = [ HAProxyServer(s,user=user,user_pass=user_pass)) for s in base_urls ]
+        self.servers = [ HAProxyServer(s,user=user,user_pass=user_pass) for s in base_urls ]
 
         self.update()
 
