@@ -1,8 +1,11 @@
+import os
+import sys
 from setuptools import setup
-from haproxystats import __version__
+
+exec(open('haproxystats/version.py').read())
 
 setup(name='haproxy-stats',
-      version=__version__,
+      version=version,
       packages=['haproxystats'],
       description='Library for retrieving and parse haproxy stats',
       author='Bradley Cicenas',
