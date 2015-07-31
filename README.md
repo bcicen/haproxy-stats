@@ -3,10 +3,7 @@ Haproxy-stats is a small Python library for fetching and parsing servers stats f
 
 # Installing
 ```
-git clone https://github.com/bcicen/haproxy-stats.git
-cd haproxy-stats/
-pip install -r requirements.txt
-python setup.py install
+pip install haproxy-stats
 ```
 
 # Usage
