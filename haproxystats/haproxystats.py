@@ -5,9 +5,6 @@ from requests import Request, Session
 
 log = logging.getLogger(__name__)
 
-def to_utf(s):
-    return s.encode('utf8')
-
 class HAProxyStatsException(Exception):
     """ Generic HAProxyStats exception """
 
@@ -19,9 +16,11 @@ class HAProxyService(object):
      - values(list): Stats for corresponding fields given above for this 
                      frontend, backend, or listener
     """
-    def __init__(self,fields,values,proxy_name=None):
+    def __init__(self, fields, values, proxy_name=None):
+        values = [ self._decode(v) for v in values ]
+
         #zip field names and values
-        self.__dict__ = dict(zip(fields, self._read(values)))
+        self.__dict__ = dict(zip(fields, values))
 
         if self.svname == 'FRONTEND' or self.svname == 'BACKEND':
             self.name = self.pxname
@@ -30,21 +29,17 @@ class HAProxyService(object):
 
         self.proxy_name = proxy_name
 
-    def _read(self,values):
+    @staticmethod
+    def _decode(value):
         """
-        Read stat str, convert unicode to utf and string to int where needed
-        and return as list
+        decode byte strings and convert to int where needed
         """
-        ret = []
-
-        for v in values:
-            if v.isdigit():
-                v = int(v)
-            if isinstance(v,unicode):
-                v = to_utf(v)
-            ret.append(v)
-    
-        return ret
+        if value.isdigit():
+            return int(value)
+        if isinstance(value, bytes):
+            return value.decode('utf-8')
+        else:
+            return value
 
 class HAProxyServer(object):
     """
@@ -72,7 +67,7 @@ class HAProxyServer(object):
             return
 
         #read fields header to create keys
-        fields = [ to_utf(f) for f in csv.pop(0).split(',') if f ]
+        fields = [ f for f in csv.pop(0).split(',') if f ]
     
         #add frontends and backends first
         for line in csv:
