@@ -61,9 +61,8 @@ class HAProxyServer(object):
         self.backends = []
         self.listeners = []
 
-        csv = [ l for l in self._get(self.url).strip(' #').split('\n') if l ]
-        if not csv:
-            self.failed = True
+        csv = [ l for l in self._poll().strip(' #').split('\n') if l ]
+        if self.failed:
             return
 
         #read fields header to create keys
@@ -92,22 +91,28 @@ class HAProxyServer(object):
 
         self.last_update = datetime.utcnow()
     
-    def _get(self,url):
+    def _poll(self):
         s = Session()
+
         if None in self._auth:
-            req = Request('GET',url)
+            req = Request('GET', self.url)
         else:
-            req = Request('GET',url,auth=self._auth)
+            req = Request('GET', self.url, auth=self._auth)
 
         try:
-            r = s.send(req.prepare(),timeout=10)
-        except Exception as e:
-            raise HAProxyStatsException(
-                    'Error fetching stats from %s:\n%s' % (url,e)
-                    )
-            return ''
+            r = s.send(req.prepare(), timeout=10)
+        except Exception as ex:
+            self._fail(ex)
+
+        if not r.ok:
+            self._fail(r.text)
 
         return r.text
+
+    def _fail(self, reason):
+        self.failed = True
+        raise HAProxyStatsException('Error fetching stats from %s:\n%s' % \
+                                    (self.url, reason))
 
 class HaproxyStats(object):
     """
