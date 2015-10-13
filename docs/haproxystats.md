@@ -7,6 +7,7 @@ HaproxyStats class for fetching and parsing from an arbitrary number of HAProxy 
 * base_urls (list): List of HAProxy urls defined as hostname:port or ip:port
 * user (str):  User to authenticate with via basic auth(optional)
 * user_pass (str):  Password to authenticate with via basic auth(optional)
+* verify_ssl(bool): Fail on SSL validation error. Default True
 
 **Attrs**:
 
@@ -34,6 +35,7 @@ HAProxyServer represents a single HAProxy instance. Stores corresponding fronten
 * base_url (str): hostname:port or ip:port of this HAProxy instance
 * user (str):  User to authenticate with via basic auth(optional)
 * user_pass (str):  Password to authenticate with via basic auth(optional)
+* verify_ssl(bool): Fail on SSL validation error. Default True
 
 **Attrs**:
 
