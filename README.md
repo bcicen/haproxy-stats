@@ -11,7 +11,7 @@ pip install haproxy-stats
 from haproxystats import HaproxyStats
 
 base_urls = [ 'server1:3212', 'server2:3212' ]
-hs = HaproxyStats(base_urls,user='<username>',user_pass='<password>')
+hs = HaproxyStats(base_urls, user='<username>', password='<password>')
 
 for server in hs.servers:
     for l in server.listeners:
