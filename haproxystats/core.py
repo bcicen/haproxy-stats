@@ -1,12 +1,8 @@
-import json
 import logging
 from datetime import datetime
 from requests import Request, Session
 
 log = logging.getLogger(__name__)
-
-class HAProxyStatsException(Exception):
-    """ Generic HAProxyStats exception """
 
 class HAProxyService(object):
     """
@@ -44,8 +40,7 @@ class HAProxyService(object):
 
 class HAProxyServer(object):
     """
-    HAProxyServer object is created for each haproxy server polled. Stores
-    corresponding frontend, backend, and listener services.
+    Represents a single HAProxy instance to be polled
     params:
      - base_url(list) - HAProxy url defined as <host>:<stats-port>
      - user(str) -  User to authenticate with via basic auth(optional)
@@ -61,9 +56,7 @@ class HAProxyServer(object):
         self.url = 'http://' +  base_url + '/;csv;norefresh'
 
     def fetch_stats(self):
-        """
-        Fetch and parse stats from this Haproxy instance
-        """
+        """ Fetch and parse stats """
         self.frontends = []
         self.backends = []
         self.listeners = []
@@ -121,6 +114,4 @@ class HAProxyServer(object):
 
     def _fail(self, reason):
         self.failed = True
-        raise HAProxyStatsException('Error fetching stats from %s:\n%s' % \
-                                    (self.url, reason))
-
+        log.error('Error fetching stats from %s:\n%s' % (self.url, reason))
