@@ -1,31 +1,3 @@
-# HaproxyStats
-
-HaproxyStats class for fetching and parsing from an arbitrary number of HAProxy stat sockets. Stats will be gathered initially on instantiation and can be updated with the update() method described below.
-
-**Params**:
-
-* base_urls (list): List of HAProxy urls defined as hostname:port or ip:port
-* user (str):  User to authenticate with via basic auth(optional)
-* user_pass (str):  Password to authenticate with via basic auth(optional)
-* verify_ssl(bool): Fail on SSL validation error. Default True
-
-**Attrs**:
-
-* servers (list): List of haproxystats.HAProxyServer objects
-
-****
-
-## update
-
-Polls all servers for updated stats
-
-**Returns** (bool): True if all servers were successfully polled
-
-## to_json
-
-**Returns** (str): JSON-encoded stats for all servers
-
-
 # HAProxyServer
 
 HAProxyServer represents a single HAProxy instance. Stores corresponding frontend, backend, and listener services.
@@ -39,7 +11,7 @@ HAProxyServer represents a single HAProxy instance. Stores corresponding fronten
 
 **Attrs**:
 
-* failed (bool): Success of latest attempt to fetch stats
+* failed (bool): Whether the last update attempt failed
 * last_update (obj): datetime.datetime object of last update time in UTC
 * frontends (list): List of haproxy.HAProxyService objects identified as frontends
 * backends (list): List of haproxy.HAProxyService objects identified as backends
@@ -48,11 +20,15 @@ HAProxyServer represents a single HAProxy instance. Stores corresponding fronten
 
 ****
 
-## fetch_stats
+## update
 
 Fetches latest stats for this HAProxy server
 
 **Returns**: None
+
+## to_json
+
+**Returns** (str): JSON dump of all frontend, backend, and listener stats
 
 # HAProxyService
 
