@@ -55,7 +55,9 @@ class HAProxyServer(object):
         self.name = base_url.split(':')[0]
         self.url = 'http://' +  base_url + '/;csv;norefresh'
 
-    def fetch_stats(self):
+        self.update()
+
+    def update(self):
         """ Fetch and parse stats """
         self.frontends = []
         self.backends = []
