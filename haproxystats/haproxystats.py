@@ -47,6 +47,7 @@ class HAProxyServer(object):
     HAProxyServer object is created for each haproxy server polled. Stores
     corresponding frontend, backend, and listener services.
     params:
+     - base_url(list) - HAProxy url defined as <host>:<stats-port>
      - user(str) -  User to authenticate with via basic auth(optional)
      - password(str) -  Password to authenticate with via basic auth(optional)
      - verify_ssl(bool) - Fail on SSL validation error. Default True.
@@ -96,6 +97,9 @@ class HAProxyServer(object):
                        'backends': [ s.__dict__ for s in self.backends ] }
 
         self.last_update = datetime.utcnow()
+
+    def to_json(self):
+        return json.dumps({ self.name : self.stats })
     
     def _poll(self):
         s = Session()
@@ -120,42 +124,3 @@ class HAProxyServer(object):
         raise HAProxyStatsException('Error fetching stats from %s:\n%s' % \
                                     (self.url, reason))
 
-class HaproxyStats(object):
-    """
-    Manage multiple HAProxyServer instances.
-    params:
-     - base_urls(list) - List of haproxy instances defined as
-       hostname:port or ip:port
-     - user(str) -  User to authenticate with via basic auth(optional)
-     - password(str) -  Password to authenticate with via basic auth(optional)
-     - verify_ssl(bool) - Fail on SSL validation error. Default True.
-    """
-    def __init__(self, base_urls, user=None, password=None, verify_ssl=True):
-        self.servers = []
-        for s in base_urls:
-            server = HAProxyServer(s, user=user, password=password,
-                                   verify_ssl=verify_ssl)
-            self.servers.append(server)
-
-        self.update()
-
-    def update(self):
-        start = datetime.utcnow()
-
-        for s in self.servers:
-            s.fetch_stats()
-
-        duration = (datetime.utcnow() - start).total_seconds()
-        log.info('Polled stats from %s servers in %s seconds' % \
-                (len(self.servers),duration))
-
-        if self.get_failed():
-            return False
-
-        return True
-
-    def to_json(self):
-        return json.dumps({ s.name: s.stats for s in self.servers })
-
-    def get_failed(self):
-        return [ s for s in self.servers if s.failed ]
