@@ -1,5 +1,5 @@
 # haproxy-stats
-Haproxy-stats is a small Python library for fetching and parsing servers stats from HAProxy
+Haproxy-stats is a small Python library for fetching and parsing realtime stats from HAProxy
 
 # Installing
 ```
@@ -8,28 +8,27 @@ pip install haproxy-stats
 
 # Usage
 ```python
-from haproxystats import HaproxyStats
+from haproxystats import HaproxyServer
 
-base_urls = [ 'server1:3212', 'server2:3212' ]
-hs = HaproxyStats(base_urls, user='<username>', password='<password>')
+haproxy = HaproxyServer('127.0.0.1:3212', user='<username>', password='<password>')
 
-for server in hs.servers:
-    for l in server.listeners:
-        print l.status
+for l in haproxy.listeners:
+    print('%s: %s' % (l.name, l.status))
 ```
 ```
-UP
-UP
-UP
+backend_listener1: UP
+backend_listener2: UP
+backend_listener3: UP
+backend_listener4: UP
 ```
 
 ```python
-print(hs.to_json())
+haproxy.to_json()
 ```
 
 ```json
 {
-  "haproxy_server1": {
+  "127.0.0.1": {
     "backends": [
       {
         "status": "UP",
