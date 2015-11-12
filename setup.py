@@ -2,7 +2,7 @@ import os
 import sys
 from setuptools import setup
 
-exec(open('haproxystats/version.py').read())
+exec(open('haproxystats/__init__.py').read())
 
 setup(name='haproxy-stats',
       version=version,
