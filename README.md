@@ -1,4 +1,6 @@
 # haproxy-stats
+[![Documentation Status](https://readthedocs.org/projects/haproxy-stats/badge/?version=latest)](http://haproxy-stats.readthedocs.org/en/latest/?badge=latest)
+
 Haproxy-stats is a small Python library for fetching and parsing realtime stats from HAProxy
 
 # Installing
