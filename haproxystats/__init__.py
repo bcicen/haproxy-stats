@@ -6,40 +6,6 @@ from requests import Request, Session
 version = '1.0'
 log = logging.getLogger(__name__)
 
-class HAProxyService(object):
-    """
-    Generic service object representing a proxy component
-    params:
-     - fields(list): Fieldnames as read from haproxy stats export header
-     - values(list): Stats for corresponding fields given above for this 
-                     frontend, backend, or listener
-     - proxy_name(str): Common name of the proxy this service belongs to
-    """
-    def __init__(self, fields, values, proxy_name):
-        values = [ self._decode(v) for v in values ]
-
-        #zip field names and values
-        self.__dict__ = dict(zip(fields, values))
-
-        if self.svname == 'FRONTEND' or self.svname == 'BACKEND':
-            self.name = self.pxname
-        else:
-            self.name =  self.svname
-
-        self.proxy_name = proxy_name
-
-    @staticmethod
-    def _decode(value):
-        """
-        decode byte strings and convert to int where needed
-        """
-        if value.isdigit():
-            return int(value)
-        if isinstance(value, bytes):
-            return value.decode('utf-8')
-        else:
-            return value
-
 class HAProxyServer(object):
     """
     Represents a single HAProxy instance to be polled
@@ -65,7 +31,7 @@ class HAProxyServer(object):
         self.backends = []
         self.listeners = []
 
-        csv = [ l for l in self._poll().strip(' #').split('\n') if l ]
+        csv = [ l for l in self._fetch().strip(' #').split('\n') if l ]
         if self.failed:
             return
 
@@ -98,24 +64,59 @@ class HAProxyServer(object):
     def to_json(self):
         return json.dumps({ self.name : self.stats })
     
-    def _poll(self):
-        s = Session()
-
+    def _fetch(self):
         if None in self.auth:
             req = Request('GET', self.url)
         else:
             req = Request('GET', self.url, auth=self.auth)
 
-        try:
-            r = s.send(req.prepare(), timeout=10, verify=self.verify)
-        except Exception as ex:
-            self._fail(ex)
+        with Session() as s:
+            try:
+                r = s.send(req.prepare(), timeout=10, verify=self.verify)
+            except Exception as ex:
+                self._fail(ex)
+                return ""
 
-        if not r.ok:
-            self._fail(r.text)
+            if not r.ok:
+                self._fail(r.text)
+                return ""
 
-        return r.text
+            return r.text
 
     def _fail(self, reason):
         self.failed = True
         log.error('Error fetching stats from %s:\n%s' % (self.url, reason))
+
+
+class HAProxyService(object):
+    """
+    Generic service object representing a frontend, backend, or listener
+    params:
+     - fields(list): Fieldnames as read from haproxy stats export header
+     - values(list): Values for corresponding fields
+     - proxy_name(str): Common name of the proxy this service belongs to
+    """
+    def __init__(self, fields, values, proxy_name):
+        values = [ self._decode(v) for v in values ]
+
+        #zip field names and values
+        self.__dict__ = dict(zip(fields, values))
+
+        if self.svname == 'FRONTEND' or self.svname == 'BACKEND':
+            self.name = self.pxname
+        else:
+            self.name =  self.svname
+
+        self.proxy_name = proxy_name
+
+    @staticmethod
+    def _decode(value):
+        """
+        decode byte strings and convert to int where needed
+        """
+        if value.isdigit():
+            return int(value)
+        if isinstance(value, bytes):
+            return value.decode('utf-8')
+        else:
+            return value
