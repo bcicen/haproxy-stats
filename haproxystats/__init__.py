@@ -3,7 +3,7 @@ import logging
 from datetime import datetime
 from requests import Request, Session
 
-version = '1.0'
+version = '1.1'
 log = logging.getLogger(__name__)
 
 class HAProxyServer(object):
