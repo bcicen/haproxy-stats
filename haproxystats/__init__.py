@@ -36,11 +36,11 @@ class HAProxyServer(object):
             return
 
         #read fields header to create keys
-        fields = [ f for f in csv.pop(0).split(',') if f ]
+        self.fields = [ f for f in csv.pop(0).split(',') if f ]
     
         #add frontends and backends first
         for line in csv:
-            service = HAProxyService(fields, line.split(','), self.name)
+            service = HAProxyService(self.fields, line.split(','), self.name)
 
             if service.svname == 'FRONTEND':
                 self.frontends.append(service)
