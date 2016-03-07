@@ -1,7 +1,7 @@
 import json
 import logging
 from datetime import datetime
-from requests import Request, Session
+from requests import Session
 
 version = '1.1'
 log = logging.getLogger(__name__)
@@ -15,10 +15,14 @@ class HAProxyServer(object):
      - password(str) -  Password to authenticate with via basic auth(optional)
      - verify_ssl(bool) - Fail on SSL validation error. Default True.
     """
-    def __init__(self, base_url, user=None, password=None, verify_ssl=True):
+    def __init__(self, base_url, user=None, password=None,
+                 verify_ssl=True, timeout=5):
         self.failed = False
         self.verify = verify_ssl
-        self.auth = (user,password)
+        self.timeout = timeout
+        self._session = Session()
+        if user and password:
+            self._session.auth = (user, password)
 
         self.name = base_url.split(':')[0]
         self.url = 'http://' +  base_url + '/;csv;norefresh'
@@ -56,32 +60,26 @@ class HAProxyServer(object):
                 if backend.iid == listener.iid:
                     backend.listeners.append(listener)
 
-        self.stats = { 'frontends': [ s.__dict__ for s in self.frontends ],
-                       'backends': [ s.__dict__ for s in self.backends ] }
-
         self.last_update = datetime.utcnow()
 
     def to_json(self):
-        return json.dumps({ self.name : self.stats })
+        services = { 'frontends': self.frontends, 'backends': self.backends }
+        return json.dumps({ self.name : services }, cls=Encoder)
     
     def _fetch(self):
-        if None in self.auth:
-            req = Request('GET', self.url)
-        else:
-            req = Request('GET', self.url, auth=self.auth)
+        try:
+            r = self._session.request('GET', self.url,
+                                      timeout=self.timeout,
+                                      verify=self.verify)
+        except Exception as ex:
+            self._fail(ex)
+            return ""
 
-        with Session() as s:
-            try:
-                r = s.send(req.prepare(), timeout=10, verify=self.verify)
-            except Exception as ex:
-                self._fail(ex)
-                return ""
+        if not r.ok:
+            self._fail(r.text)
+            return ""
 
-            if not r.ok:
-                self._fail(r.text)
-                return ""
-
-            return r.text
+        return r.text
 
     def _fail(self, reason):
         self.failed = True
@@ -120,3 +118,10 @@ class HAProxyService(object):
             return value.decode('utf-8')
         else:
             return value
+
+class Encoder(json.JSONEncoder):
+    def default(self, obj):
+        if hasattr(obj, '__dict__'):
+            return obj.__dict__
+        else:
+            return json.JSONEncoder.default(self, obj)
