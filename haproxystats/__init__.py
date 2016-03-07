@@ -54,7 +54,7 @@ class HAProxyServer(object):
         for listener in self.listeners:
             for backend in self.backends:
                 if backend.iid == listener.iid:
-                    backend.listeners.append(listener.__dict__)
+                    backend.listeners.append(listener)
 
         self.stats = { 'frontends': [ s.__dict__ for s in self.frontends ],
                        'backends': [ s.__dict__ for s in self.backends ] }
