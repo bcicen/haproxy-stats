@@ -6,7 +6,7 @@ HAProxyServer represents a single HAProxy instance. Stores corresponding fronten
 
 * base_url (str): hostname:port or ip:port of this HAProxy instance
 * user (str):  User to authenticate with via basic auth(optional)
-* user_pass (str):  Password to authenticate with via basic auth(optional)
+* password(str):  Password to authenticate with via basic auth(optional)
 * verify_ssl(bool): Fail on SSL validation error. Default True
 
 **Attrs**:
@@ -16,7 +16,6 @@ HAProxyServer represents a single HAProxy instance. Stores corresponding fronten
 * frontends (list): List of haproxy.HAProxyService objects identified as frontends
 * backends (list): List of haproxy.HAProxyService objects identified as backends
 * listeners (list):  List of haproxy.HAProxyService objects identified as backend listeners
-* stats (dict): Structured dictionary of all frontends,backends,and listener dicts
 
 ****
 
@@ -28,7 +27,7 @@ Fetches latest stats for this HAProxy server
 
 ## to_json
 
-**Returns** (str): JSON dump of all frontend, backend, and listener stats
+**Returns** (str): JSON-encoded representation of all frontend, backend, and listener stats
 
 # HAProxyService
 
