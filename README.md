@@ -12,16 +12,15 @@ pip install haproxy-stats
 ```python
 from haproxystats import HAProxyServer
 
-haproxy = HAProxyServer('127.0.0.1:3212', user='<username>', password='<password>')
+haproxy = HAProxyServer('127.0.0.1:3212')
 
-for l in haproxy.listeners:
-    print('%s: %s' % (l.name, l.status))
+for b in haproxy.backends:
+    print('%s: %s' % (b.name, b.status))
 ```
 ```
-backend_listener1: UP
-backend_listener2: UP
-backend_listener3: UP
-backend_listener4: UP
+backend1: UP
+backend2: UP
+backend3: UP
 ```
 
 ```python
