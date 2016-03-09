@@ -7,7 +7,7 @@ exec(open('haproxystats/__init__.py').read())
 setup(name='haproxy-stats',
       version=version,
       packages=['haproxystats'],
-      description='Library for retrieving and parse haproxy stats',
+      description='Library for collecting and parsing HAProxy server stats',
       author='Bradley Cicenas',
       author_email='bradley.cicenas@gmail.com',
       url='https://github.com/bcicen/haproxy-stats',
@@ -17,6 +17,7 @@ setup(name='haproxy-stats',
           'License :: OSI Approved :: MIT License ',
           'Natural Language :: English',
           'Programming Language :: Python',
-          'Programming Language :: Python :: 3.4',
+          'Programming Language :: Python :: 2',
+          'Programming Language :: Python :: 3',
       ),
-      keywords='haproxy stats devops')
+      keywords='haproxy stats monitoring devops')
