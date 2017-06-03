@@ -1,4 +1,4 @@
-site_name: HaProxy-Stats Documenation
+site_name: HaProxy-Stats Documentation
 site_url: https://haproxy-stats.readthedocs.org
 repo_url: https://github.com/bcicen/haproxy-stats
 theme: readthedocs
