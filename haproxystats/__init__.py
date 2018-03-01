@@ -4,6 +4,7 @@ from datetime import datetime
 from requests import Session
 
 log = logging.getLogger(__name__)
+logging.basicConfig(level=logging.WARN)
 
 class HAProxyServer(object):
     """
