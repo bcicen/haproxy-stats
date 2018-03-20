@@ -16,7 +16,7 @@ class HAProxyServer(object):
      - verify_ssl(bool) - Fail on SSL validation error. Default True.
     """
     def __init__(self, base_url, user=None, password=None,
-                 verify_ssl=True, timeout=5):
+                 verify_ssl=True, timeout=5, https=False):
         self.failed = False
         self.verify = verify_ssl
         self.timeout = timeout
@@ -25,7 +25,11 @@ class HAProxyServer(object):
             self._session.auth = (user, password)
 
         self.name = base_url.split(':')[0]
-        self.url = 'http://' +  base_url + '/;csv;norefresh'
+        if https:
+            base_url = 'https://'+base_url
+        else:
+            base_url = 'http://'+base_url
+        self.url = base_url + '/;csv;norefresh'
 
         self.update()
 
